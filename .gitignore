@@ -1,0 +1,51 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pytest_tmp/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
+
+# Legacy local data folder from earlier project versions.
+dataset/
+
+# Local datasets can be large and may have license restrictions.
+datasets/external/**/*
+!datasets/external/.gitkeep
+datasets/source/*
+!datasets/source/.gitkeep
+datasets/generated/original/*
+!datasets/generated/original/.gitkeep
+datasets/generated/edited/*
+!datasets/generated/edited/.gitkeep
+datasets/public/original/*
+!datasets/public/original/.gitkeep
+datasets/public/edited/*
+!datasets/public/edited/.gitkeep
+datasets/generated/manifest.csv
+datasets/public/manifest.csv
+
+# Downloaded archives and exported datasets.
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+*.bz2
+
+# Generated project artifacts.
+features/**/*
+!features/.gitkeep
+models/**/*
+!models/.gitkeep
+reports/figures/**/*
+!reports/figures/.gitkeep
+reports/predictions/**/*
+!reports/predictions/.gitkeep
+reports/metrics*.csv
+reports/*_classification_report.txt
+reports/course_report.md
