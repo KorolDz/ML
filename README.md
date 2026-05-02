@@ -62,6 +62,8 @@ python -m pip install -r requirements.txt
 - **CASIA v2**  
   Kaggle mirror: https://www.kaggle.com/datasets/divg07/casia-20-image-tampering-detection-dataset  
   Используй только если лицензия/источник подходят для твоей курсовой.
+- **TIF-пары вида `1.tif` / `1t.tif`**  
+  Импортируются через `--kind tif-pairs`: файл без `t` считается `original`, файл с суффиксом `t` считается `edited`.
 
 Пример структуры:
 
@@ -75,6 +77,7 @@ datasets/external/
     Tp/
   comofod/
   coverage/
+  image/
 ```
 
 ## Основной workflow
@@ -94,6 +97,7 @@ python scripts/02_import_dataset.py --kind columbia --source datasets/external/c
 python scripts/02_import_dataset.py --kind casia --source datasets/external/casia --overwrite
 python scripts/02_import_dataset.py --kind comofod --source datasets/external/comofod --overwrite
 python scripts/02_import_dataset.py --kind coverage --source datasets/external/coverage --overwrite
+python scripts/02_import_dataset.py --kind tif-pairs --source datasets/external/image --overwrite
 ```
 
 После импорта данные приводятся к единому виду:
@@ -118,6 +122,12 @@ python scripts/03_extract_features.py --sources public
 
 ```text
 features/features.csv
+```
+
+На большом датасете скрипт печатает прогресс каждые 100 изображений. Для быстрой проверки можно обработать небольшой сэмпл:
+
+```powershell
+python scripts/03_extract_features.py --sources public --limit 1000
 ```
 
 `label` нужен для обучения и оценки. Для нового изображения label не нужен: prediction-скрипт сам извлекает признаки и подает их в обученную модель.

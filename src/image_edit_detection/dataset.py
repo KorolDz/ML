@@ -311,8 +311,11 @@ def import_external_dataset(
     elif kind_normalized == "coverage":
         original_sources, edited_sources = _find_coverage_files(source_root)
         manipulation_type = "copy_move"
+    elif kind_normalized == "tif-pairs":
+        original_sources, edited_sources = _find_tif_pair_files(source_root)
+        manipulation_type = "tampering"
     else:
-        raise ValueError("kind must be one of: columbia, casia, comofod, coverage")
+        raise ValueError("kind must be one of: columbia, casia, comofod, coverage, tif-pairs")
 
     if not original_sources or not edited_sources:
         raise ValueError(f"Could not find original/edited images for {kind_normalized}")
@@ -397,9 +400,17 @@ def _find_public_label_dirs(source_root: Path) -> tuple[list[Path], list[Path]]:
         name = directory.name.lower()
         if _is_mask_or_metadata_path(directory):
             continue
-        if name in original_markers or name.endswith("_auth"):
+        if (
+            name in original_markers
+            or name.endswith("_auth")
+            or name.startswith(("au-", "auth-", "authentic-", "original-"))
+        ):
             original_dirs.append(directory)
-        elif name in edited_markers or name.endswith("_splc"):
+        elif (
+            name in edited_markers
+            or name.endswith("_splc")
+            or name.startswith(("sp-", "splc-", "spliced-", "tp-", "tampered-", "forged-"))
+        ):
             edited_dirs.append(directory)
 
     return original_dirs, edited_dirs
@@ -443,6 +454,22 @@ def _find_coverage_files(source_root: Path) -> tuple[list[Path], list[Path]]:
             edited.append(path)
     if not originals or not edited:
         return _find_comofod_files(source_root)
+    return originals, edited
+
+
+def _find_tif_pair_files(source_root: Path) -> tuple[list[Path], list[Path]]:
+    images = list(iter_image_files(source_root))
+    by_stem = {path.stem.lower(): path for path in images}
+    originals: list[Path] = []
+    edited: list[Path] = []
+
+    for path in images:
+        stem = path.stem.lower()
+        if stem.endswith("t") and stem[:-1] in by_stem:
+            edited.append(path)
+        elif f"{stem}t" in by_stem:
+            originals.append(path)
+
     return originals, edited
 
 

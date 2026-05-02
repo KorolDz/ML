@@ -59,7 +59,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     import_parser.add_argument(
         "--kind",
-        choices=["columbia", "casia", "comofod", "coverage"],
+        choices=["columbia", "casia", "comofod", "coverage", "tif-pairs"],
         required=True,
         help="External dataset layout to import.",
     )
@@ -72,6 +72,18 @@ def main(argv: list[str] | None = None) -> int:
     features_parser.add_argument("--output", type=Path, default=Path("features/features.csv"))
     features_parser.add_argument("--sources", nargs="+", default=["generated", "public"])
     features_parser.add_argument("--strict", action="store_true")
+    features_parser.add_argument(
+        "--progress-every",
+        type=int,
+        default=100,
+        help="Print progress after this many extracted rows. Use 0 to disable.",
+    )
+    features_parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Extract at most this many rows for a quick smoke test.",
+    )
 
     train_parser = subparsers.add_parser("train", help="Train and evaluate Random Forest models.")
     train_parser.add_argument("--features", type=Path, default=Path("features/features.csv"))
@@ -194,6 +206,8 @@ def main(argv: list[str] | None = None) -> int:
             dataset_root=args.dataset_root,
             sources=args.sources,
             strict=args.strict,
+            progress_every=args.progress_every,
+            limit=args.limit,
         )
         save_feature_table(frame, args.output)
         print(f"Saved {len(frame)} feature rows to {args.output}")

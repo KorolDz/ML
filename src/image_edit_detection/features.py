@@ -46,20 +46,30 @@ def build_feature_table(
     dataset_root: Path,
     sources: Iterable[str] = ("generated", "public"),
     strict: bool = False,
+    progress_every: int = 0,
+    limit: int | None = None,
 ) -> pd.DataFrame:
     """Build a feature table from the expected dataset directory layout."""
 
     rows: list[dict[str, float | int | str]] = []
     errors: list[str] = []
+    reached_limit = False
 
     for source_name in sources:
+        if reached_limit:
+            break
         source_root = dataset_root / source_name
         manifest = _load_manifest(source_root)
         for label_name, label in LABELS.items():
+            if reached_limit:
+                break
             label_dir = source_root / label_name
             if not label_dir.exists():
                 continue
             for path in _iter_images(label_dir):
+                if limit is not None and len(rows) >= limit:
+                    reached_limit = True
+                    break
                 try:
                     manifest_key = _manifest_key(path, source_root)
                     if manifest and manifest_key not in manifest:
@@ -78,6 +88,8 @@ def build_feature_table(
                     )
                     row["dataset_name"] = str(manifest_row.get("dataset_name", source_name))
                     rows.append(row)
+                    if progress_every > 0 and len(rows) % progress_every == 0:
+                        print(f"Extracted {len(rows)} feature rows; latest: {path}", flush=True)
                 except Exception as exc:  # pragma: no cover - exercised by real corrupt files
                     message = f"{path}: {exc}"
                     if strict:

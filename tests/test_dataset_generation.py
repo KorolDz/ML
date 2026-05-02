@@ -85,3 +85,57 @@ def test_import_external_columbia_creates_public_manifest(tmp_path):
     assert "edited/" in manifest
     assert "splicing" in manifest
     assert "columbia" in manifest
+
+
+def test_import_external_columbia_supports_imsplice_folder_names(tmp_path):
+    from PIL import Image
+
+    source_root = tmp_path / "external" / "ImSpliceDataset"
+    auth_dir = source_root / "Au-SS-H"
+    spliced_dir = source_root / "Sp-SS-H"
+    public_root = tmp_path / "datasets" / "public"
+    auth_dir.mkdir(parents=True)
+    spliced_dir.mkdir(parents=True)
+
+    Image.new("RGB", (64, 48), color=(100, 90, 80)).save(auth_dir / "auth_01.tif")
+    Image.new("RGB", (64, 48), color=(150, 120, 90)).save(spliced_dir / "spliced_01.tif")
+
+    counts = import_external_dataset(
+        kind="columbia",
+        source_root=source_root,
+        public_root=public_root,
+        overwrite=True,
+    )
+
+    assert counts.original == 1
+    assert counts.edited == 1
+    manifest = (public_root / "manifest.csv").read_text(encoding="utf-8")
+    assert "original/Au-SS-H_auth_01.tif" in manifest
+    assert "edited/Sp-SS-H_spliced_01.tif" in manifest
+    assert "splicing" in manifest
+
+
+def test_import_external_tif_pairs_uses_t_suffix_as_edited(tmp_path):
+    from PIL import Image
+
+    source_root = tmp_path / "external" / "image"
+    public_root = tmp_path / "datasets" / "public"
+    source_root.mkdir(parents=True)
+
+    Image.new("RGB", (64, 48), color=(100, 90, 80)).save(source_root / "1.tif")
+    Image.new("RGB", (64, 48), color=(150, 120, 90)).save(source_root / "1t.tif")
+
+    counts = import_external_dataset(
+        kind="tif-pairs",
+        source_root=source_root,
+        public_root=public_root,
+        overwrite=True,
+    )
+
+    assert counts.original == 1
+    assert counts.edited == 1
+    manifest = (public_root / "manifest.csv").read_text(encoding="utf-8")
+    assert "original/1_" in manifest
+    assert "edited/1t_" in manifest
+    assert "tampering" in manifest
+    assert "tif-pairs" in manifest
