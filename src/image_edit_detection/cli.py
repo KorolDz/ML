@@ -59,7 +59,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     import_parser.add_argument(
         "--kind",
-        choices=["columbia", "casia", "comofod", "coverage", "tif-pairs"],
+        choices=["columbia", "casia", "misd", "imd2020", "imd2020-real", "imd2020-inpainting", "realistic-tampering", "comofod", "coverage", "tif-pairs"],
         required=True,
         help="External dataset layout to import.",
     )

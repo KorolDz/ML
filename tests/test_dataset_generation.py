@@ -110,8 +110,8 @@ def test_import_external_columbia_supports_imsplice_folder_names(tmp_path):
     assert counts.original == 1
     assert counts.edited == 1
     manifest = (public_root / "manifest.csv").read_text(encoding="utf-8")
-    assert "original/Au-SS-H_auth_01.tif" in manifest
-    assert "edited/Sp-SS-H_spliced_01.tif" in manifest
+    assert "original/Au-SS-H_auth_01_" in manifest
+    assert "edited/Sp-SS-H_spliced_01_" in manifest
     assert "splicing" in manifest
 
 
@@ -139,3 +139,144 @@ def test_import_external_tif_pairs_uses_t_suffix_as_edited(tmp_path):
     assert "edited/1t_" in manifest
     assert "tampering" in manifest
     assert "tif-pairs" in manifest
+
+
+def test_import_external_misd_ignores_ground_truth_masks(tmp_path):
+    from PIL import Image
+
+    source_root = tmp_path / "external" / "Dataset" / "Dataset"
+    au_dir = source_root / "Au"
+    sp_dir = source_root / "Sp"
+    masks_dir = source_root / "Ground Truth Masks"
+    public_root = tmp_path / "datasets" / "public"
+    au_dir.mkdir(parents=True)
+    sp_dir.mkdir(parents=True)
+    masks_dir.mkdir(parents=True)
+
+    Image.new("RGB", (64, 48), color=(100, 90, 80)).save(au_dir / "auth.jpg")
+    Image.new("RGB", (64, 48), color=(150, 120, 90)).save(sp_dir / "spliced.jpg")
+    Image.new("L", (64, 48), color=255).save(masks_dir / "spliced_mask.png")
+
+    counts = import_external_dataset(
+        kind="misd",
+        source_root=source_root,
+        public_root=public_root,
+        overwrite=True,
+    )
+
+    assert counts.original == 1
+    assert counts.edited == 1
+    assert len(list((public_root / "original").glob("*.jpg"))) == 1
+    assert len(list((public_root / "edited").glob("*.jpg"))) == 1
+    manifest = (public_root / "manifest.csv").read_text(encoding="utf-8")
+    assert "misd" in manifest
+    assert "splicing" in manifest
+    assert "mask" not in manifest.lower()
+
+
+def test_import_external_imd2020_uses_orig_suffix_and_skips_masks(tmp_path):
+    from PIL import Image
+
+    sample_dir = tmp_path / "external" / "IMD2020" / "abc123"
+    public_root = tmp_path / "datasets" / "public"
+    sample_dir.mkdir(parents=True)
+
+    Image.new("RGB", (64, 48), color=(100, 90, 80)).save(sample_dir / "abc123_orig.jpg")
+    Image.new("RGB", (64, 48), color=(150, 120, 90)).save(sample_dir / "fake_0.jpg")
+    Image.new("L", (64, 48), color=255).save(sample_dir / "fake_0_mask.png")
+
+    counts = import_external_dataset(
+        kind="imd2020",
+        source_root=tmp_path / "external" / "IMD2020",
+        public_root=public_root,
+        overwrite=True,
+    )
+
+    assert counts.original == 1
+    assert counts.edited == 1
+    manifest = (public_root / "manifest.csv").read_text(encoding="utf-8")
+    assert "imd2020" in manifest
+    assert "photoshop" in manifest
+    assert "mask" not in manifest.lower()
+
+
+def test_import_external_imd2020_real_imports_original_only(tmp_path):
+    from PIL import Image
+
+    device_dir = tmp_path / "external" / "IMD2020_real_01" / "canon"
+    public_root = tmp_path / "datasets" / "public"
+    device_dir.mkdir(parents=True)
+
+    Image.new("RGB", (64, 48), color=(100, 90, 80)).save(device_dir / "real_01.jpg")
+
+    counts = import_external_dataset(
+        kind="imd2020-real",
+        source_root=tmp_path / "external" / "IMD2020_real_01",
+        public_root=public_root,
+        overwrite=True,
+    )
+
+    assert counts.original == 1
+    assert counts.edited == 0
+    assert len(list((public_root / "original").glob("*.jpg"))) == 1
+    assert not list((public_root / "edited").glob("*.jpg"))
+    manifest = (public_root / "manifest.csv").read_text(encoding="utf-8")
+    assert "imd2020-real" in manifest
+    assert ",0," in manifest
+
+
+def test_import_external_imd2020_inpainting_imports_edited_only(tmp_path):
+    from PIL import Image
+
+    source_root = tmp_path / "external" / "IMD2020_Generative_Image_Inpainting_yu2018_01"
+    public_root = tmp_path / "datasets" / "public"
+    source_root.mkdir(parents=True)
+
+    Image.new("RGB", (64, 48), color=(150, 120, 90)).save(source_root / "inpainted_01.jpg")
+
+    counts = import_external_dataset(
+        kind="imd2020-inpainting",
+        source_root=source_root,
+        public_root=public_root,
+        overwrite=True,
+    )
+
+    assert counts.original == 0
+    assert counts.edited == 1
+    assert not list((public_root / "original").glob("*.jpg"))
+    assert len(list((public_root / "edited").glob("*.jpg"))) == 1
+    manifest = (public_root / "manifest.csv").read_text(encoding="utf-8")
+    assert "imd2020-inpainting" in manifest
+    assert "inpainting" in manifest
+    assert ",1," in manifest
+
+
+def test_import_external_realistic_tampering_uses_pristine_and_tampered_realistic(tmp_path):
+    from PIL import Image
+
+    device_root = tmp_path / "external" / "realistic-tampering-dataset" / "data-images" / "Canon_60D"
+    pristine_dir = device_root / "pristine"
+    tampered_dir = device_root / "tampered-realistic"
+    ground_truth_dir = device_root / "ground-truth"
+    public_root = tmp_path / "datasets" / "public"
+    pristine_dir.mkdir(parents=True)
+    tampered_dir.mkdir(parents=True)
+    ground_truth_dir.mkdir(parents=True)
+
+    Image.new("RGB", (64, 48), color=(100, 90, 80)).save(pristine_dir / "DPP0012.TIF")
+    Image.new("RGB", (64, 48), color=(150, 120, 90)).save(tampered_dir / "DPP0012.TIF")
+    Image.new("L", (64, 48), color=255).save(ground_truth_dir / "DPP0012.PNG")
+
+    counts = import_external_dataset(
+        kind="realistic-tampering",
+        source_root=tmp_path / "external" / "realistic-tampering-dataset",
+        public_root=public_root,
+        overwrite=True,
+    )
+
+    assert counts.original == 1
+    assert counts.edited == 1
+    manifest = (public_root / "manifest.csv").read_text(encoding="utf-8")
+    assert "realistic-tampering" in manifest
+    assert "realistic_tampering" in manifest
+    assert "ground-truth" not in manifest.lower()

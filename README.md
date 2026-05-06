@@ -64,6 +64,16 @@ python -m pip install -r requirements.txt
   Используй только если лицензия/источник подходят для твоей курсовой.
 - **TIF-пары вида `1.tif` / `1t.tif`**  
   Импортируются через `--kind tif-pairs`: файл без `t` считается `original`, файл с суффиксом `t` считается `edited`.
+- **MISD**  
+  Структура `Au`, `Sp`, `Ground Truth Masks`. Импортируется через `--kind misd`: `Au` -> `original`, `Sp` -> `edited`, маски игнорируются.
+- **IMD2020 Real-Life Manipulated Images**  
+  Импортируется через `--kind imd2020`: файлы `*_orig.*` -> `original`, остальные изображения без `_mask` -> `edited`.
+- **IMD2020 Large-Scale Set of Real Images**  
+  Импортируется через `--kind imd2020-real`: все изображения добавляются только в `original`.
+- **IMD2020 Large-Scale Set of Inpainting Images**  
+  Импортируется через `--kind imd2020-inpainting`: все изображения добавляются только в `edited`, `manipulation_type=inpainting`.
+- **Realistic Tampering Dataset**  
+  Импортируется через `--kind realistic-tampering`: `pristine` -> `original`, `tampered-realistic` -> `edited`, `ground-truth` игнорируется.
 
 Пример структуры:
 
@@ -78,6 +88,17 @@ datasets/external/
   comofod/
   coverage/
   image/
+  Dataset/Dataset/       # MISD: Au, Sp, Ground Truth Masks
+  IMD2020/               # Real-Life Manipulated Images
+  IMD2020_real_01/       # Large-Scale real images, part 1
+  IMD2020_real_02/
+  IMD2020_real_03/
+  IMD2020_Generative_Image_Inpainting_yu2018_01/
+  IMD2020_Generative_Image_Inpainting_yu2018_02/
+  IMD2020_Generative_Image_Inpainting_yu2018_03/
+  IMD2020_Generative_Image_Inpainting_yu2018_04/
+  IMD2020_Generative_Image_Inpainting_yu2018_05/
+  realistic-tampering-dataset/
 ```
 
 ## Основной workflow
@@ -98,6 +119,17 @@ python scripts/02_import_dataset.py --kind casia --source datasets/external/casi
 python scripts/02_import_dataset.py --kind comofod --source datasets/external/comofod --overwrite
 python scripts/02_import_dataset.py --kind coverage --source datasets/external/coverage --overwrite
 python scripts/02_import_dataset.py --kind tif-pairs --source datasets/external/image --overwrite
+python scripts/02_import_dataset.py --kind misd --source datasets/external/Dataset/Dataset --overwrite
+python scripts/02_import_dataset.py --kind imd2020 --source datasets/external/IMD2020 --overwrite
+python scripts/02_import_dataset.py --kind imd2020-real --source datasets/external/IMD2020_real_01 --overwrite
+python scripts/02_import_dataset.py --kind imd2020-real --source datasets/external/IMD2020_real_02 --overwrite
+python scripts/02_import_dataset.py --kind imd2020-real --source datasets/external/IMD2020_real_03 --overwrite
+python scripts/02_import_dataset.py --kind imd2020-inpainting --source datasets/external/IMD2020_Generative_Image_Inpainting_yu2018_01 --overwrite
+python scripts/02_import_dataset.py --kind imd2020-inpainting --source datasets/external/IMD2020_Generative_Image_Inpainting_yu2018_02 --overwrite
+python scripts/02_import_dataset.py --kind imd2020-inpainting --source datasets/external/IMD2020_Generative_Image_Inpainting_yu2018_03 --overwrite
+python scripts/02_import_dataset.py --kind imd2020-inpainting --source datasets/external/IMD2020_Generative_Image_Inpainting_yu2018_04 --overwrite
+python scripts/02_import_dataset.py --kind imd2020-inpainting --source datasets/external/IMD2020_Generative_Image_Inpainting_yu2018_05 --overwrite
+python scripts/02_import_dataset.py --kind realistic-tampering --source datasets/external/realistic-tampering-dataset --overwrite
 ```
 
 После импорта данные приводятся к единому виду:

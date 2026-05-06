@@ -305,6 +305,21 @@ def import_external_dataset(
     if kind_normalized == "casia":
         original_sources, edited_sources = _find_casia_label_dirs(source_root)
         manipulation_type = "tampering"
+    elif kind_normalized == "misd":
+        original_sources, edited_sources = _find_misd_label_dirs(source_root)
+        manipulation_type = "splicing"
+    elif kind_normalized == "imd2020":
+        original_sources, edited_sources = _find_imd2020_files(source_root)
+        manipulation_type = "photoshop"
+    elif kind_normalized == "imd2020-real":
+        original_sources, edited_sources = list(iter_image_files(source_root)), []
+        manipulation_type = "none"
+    elif kind_normalized == "imd2020-inpainting":
+        original_sources, edited_sources = [], list(iter_image_files(source_root))
+        manipulation_type = "inpainting"
+    elif kind_normalized == "realistic-tampering":
+        original_sources, edited_sources = _find_realistic_tampering_label_dirs(source_root)
+        manipulation_type = "realistic_tampering"
     elif kind_normalized == "comofod":
         original_sources, edited_sources = _find_comofod_files(source_root)
         manipulation_type = "copy_move"
@@ -315,10 +330,16 @@ def import_external_dataset(
         original_sources, edited_sources = _find_tif_pair_files(source_root)
         manipulation_type = "tampering"
     else:
-        raise ValueError("kind must be one of: columbia, casia, comofod, coverage, tif-pairs")
+        raise ValueError(
+            "kind must be one of: columbia, casia, misd, imd2020, "
+            "imd2020-real, imd2020-inpainting, realistic-tampering, "
+            "comofod, coverage, tif-pairs"
+        )
 
-    if not original_sources or not edited_sources:
-        raise ValueError(f"Could not find original/edited images for {kind_normalized}")
+    if not original_sources and kind_normalized != "imd2020-inpainting":
+        raise ValueError(f"Could not find original images for {kind_normalized}")
+    if not edited_sources and kind_normalized != "imd2020-real":
+        raise ValueError(f"Could not find edited images for {kind_normalized}")
 
     original_count, original_entries = _copy_labeled_inputs(original_sources, original_dir, overwrite)
     edited_count, edited_entries = _copy_labeled_inputs(edited_sources, edited_dir, overwrite)
@@ -430,6 +451,44 @@ def _find_casia_label_dirs(source_root: Path) -> tuple[list[Path], list[Path]]:
     return original_dirs, edited_dirs
 
 
+def _find_misd_label_dirs(source_root: Path) -> tuple[list[Path], list[Path]]:
+    original_dirs: list[Path] = []
+    edited_dirs: list[Path] = []
+    for directory in [source_root, *sorted(p for p in source_root.rglob("*") if p.is_dir())]:
+        if _is_mask_or_metadata_path(directory):
+            continue
+        name = directory.name.lower()
+        if name == "au":
+            original_dirs.append(directory)
+        elif name == "sp":
+            edited_dirs.append(directory)
+    return original_dirs, edited_dirs
+
+
+def _find_imd2020_files(source_root: Path) -> tuple[list[Path], list[Path]]:
+    originals: list[Path] = []
+    edited: list[Path] = []
+    for path in iter_image_files(source_root):
+        stem = path.stem.lower()
+        if stem.endswith("_orig"):
+            originals.append(path)
+        else:
+            edited.append(path)
+    return originals, edited
+
+def _find_realistic_tampering_label_dirs(source_root: Path) -> tuple[list[Path], list[Path]]:
+    original_dirs: list[Path] = []
+    edited_dirs: list[Path] = []
+    for directory in [source_root, *sorted(p for p in source_root.rglob("*") if p.is_dir())]:
+        if _is_mask_or_metadata_path(directory):
+            continue
+        name = directory.name.lower().replace("_", "-").replace(" ", "-")
+        if name == "pristine":
+            original_dirs.append(directory)
+        elif name == "tampered-realistic":
+            edited_dirs.append(directory)
+    return original_dirs, edited_dirs
+
 def _find_comofod_files(source_root: Path) -> tuple[list[Path], list[Path]]:
     originals: list[Path] = []
     edited: list[Path] = []
@@ -483,8 +542,9 @@ def _copy_labeled_images(
     entries: list[tuple[Path, Path]] = []
     for source_dir in source_dirs:
         for source_path in iter_image_files(source_dir):
-            relative_token = "_".join(source_path.relative_to(source_dir).parts)
-            target_name = f"{source_dir.name}_{relative_token}"
+            relative_path = source_path.relative_to(source_dir)
+            relative_token = "_".join(relative_path.with_suffix("").parts)
+            target_name = f"{source_dir.name}_{relative_token}_{_path_digest(source_path)}{source_path.suffix}"
             target_name = target_name.replace(" ", "_")
             target_path = target_dir / target_name
             if target_path in seen_targets:
@@ -725,6 +785,7 @@ def _is_mask_or_metadata_path(path: Path) -> bool:
         "mask" in part
         or "groundtruth" in part
         or "ground_truth" in part
+        or "ground-truth" in part
         or part in {"gt", "edgemask", "edgemasks"}
         for part in lowered
     )
