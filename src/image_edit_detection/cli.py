@@ -17,7 +17,7 @@ from image_edit_detection.features import build_feature_table, save_feature_tabl
 from image_edit_detection.predict import predict_image, save_prediction_report
 from image_edit_detection.report import build_course_report
 from image_edit_detection.train import DEFAULT_FEATURE_GROUPS, DEFAULT_SCOPES, run_experiments
-from image_edit_detection.visualizations import save_ela_samples
+from image_edit_detection.visualizations import save_ela_evidence_visualization, save_ela_samples
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -133,6 +133,29 @@ def main(argv: list[str] | None = None) -> int:
         "--output",
         type=Path,
         default=Path("reports/predictions/latest_prediction.md"),
+    )
+    predict_parser.add_argument(
+        "--no-visualization",
+        action="store_true",
+        help="Do not save the ELA evidence visualization.",
+    )
+    predict_parser.add_argument(
+        "--visualization-output",
+        type=Path,
+        default=None,
+        help="Path for the ELA evidence visualization.",
+    )
+    predict_parser.add_argument(
+        "--ela-quality",
+        type=int,
+        default=90,
+        help="JPEG quality used for ELA recompression.",
+    )
+    predict_parser.add_argument(
+        "--ela-threshold-percentile",
+        type=float,
+        default=95.0,
+        help="Percentile used to highlight the ELA pseudomask.",
     )
 
     run_parser = subparsers.add_parser("run-all", help="Run generated data, features, and training.")
@@ -260,11 +283,24 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "predict-image":
         result = predict_image(image_path=args.image, model_path=args.model)
-        save_prediction_report(result, args.output)
+        visualization_path = None
+        if not args.no_visualization:
+            visualization_path = args.visualization_output or args.output.with_name(
+                f"{args.output.stem}_evidence.png"
+            )
+            save_ela_evidence_visualization(
+                image_path=args.image,
+                output_path=visualization_path,
+                quality=args.ela_quality,
+                threshold_percentile=args.ela_threshold_percentile,
+            )
+        save_prediction_report(result, args.output, visualization_path=visualization_path)
         print(f"Prediction: {result.prediction}")
         print(f"Probability original: {result.probabilities.get('original', 0.0):.2f}")
         print(f"Probability edited: {result.probabilities.get('edited', 0.0):.2f}")
         print(f"Model: {result.model_path.name}")
+        if visualization_path is not None:
+            print(f"Saved ELA evidence visualization to {visualization_path}")
         print(f"Saved prediction report to {args.output}")
         return 0
 

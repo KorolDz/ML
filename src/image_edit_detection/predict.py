@@ -64,7 +64,11 @@ def predict_image(image_path: Path, model_path: Path) -> PredictionResult:
     )
 
 
-def save_prediction_report(result: PredictionResult, output_path: Path) -> None:
+def save_prediction_report(
+    result: PredictionResult,
+    output_path: Path,
+    visualization_path: Path | None = None,
+) -> None:
     """Save a compact Markdown report for one prediction."""
 
     probability_lines = [
@@ -72,6 +76,18 @@ def save_prediction_report(result: PredictionResult, output_path: Path) -> None:
     ]
     if not probability_lines:
         probability_lines = ["- probabilities unavailable"]
+
+    visualization_lines: list[str] = []
+    if visualization_path is not None:
+        visualization_lines = [
+            "ELA-псевдомаска:",
+            "",
+            f"![ELA evidence]({_markdown_path(output_path, visualization_path)})",
+            "",
+            "Красная область показывает повышенный ELA-сигнал. "
+            "Это подсказка для анализа, а не точная ground-truth маска редактирования.",
+            "",
+        ]
 
     text = "\n".join(
         [
@@ -87,6 +103,7 @@ def save_prediction_report(result: PredictionResult, output_path: Path) -> None:
             "Вероятности:",
             *probability_lines,
             "",
+            *visualization_lines,
             "Важно: prediction надежен настолько, насколько надежен обучающий датасет. "
             "Для финального результата используй полный forensic dataset.",
             "",
@@ -94,3 +111,10 @@ def save_prediction_report(result: PredictionResult, output_path: Path) -> None:
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(text, encoding="utf-8")
+
+
+def _markdown_path(report_path: Path, artifact_path: Path) -> str:
+    try:
+        return artifact_path.resolve().relative_to(report_path.parent.resolve()).as_posix()
+    except ValueError:
+        return artifact_path.as_posix()

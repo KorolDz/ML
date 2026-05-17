@@ -211,6 +211,7 @@ Prediction: edited
 Probability original: 0.18
 Probability edited: 0.82
 Model: public_combined_random_forest.joblib
+Saved ELA evidence visualization to reports/predictions/latest_prediction_evidence.png
 Saved prediction report to reports/predictions/latest_prediction.md
 ```
 
@@ -218,6 +219,14 @@ Saved prediction report to reports/predictions/latest_prediction.md
 
 ```text
 reports/predictions/latest_prediction.md
+reports/predictions/latest_prediction_evidence.png
+```
+
+По умолчанию рядом с отчетом создается ELA-визуализация: оригинал, ELA-карта и красная псевдомаска подозрительных областей. Это не ground-truth маска редактирования, а наглядная forensic-подсказка. Полезные параметры:
+
+```powershell
+python scripts/08_predict_image.py --image path\to\image.jpg --no-visualization
+python scripts/08_predict_image.py --image path\to\image.jpg --visualization-output reports\predictions\evidence.png --ela-quality 90 --ela-threshold-percentile 95
 ```
 
 ## Demo-режим
