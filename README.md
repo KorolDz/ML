@@ -28,28 +28,35 @@ Korol_DA_23
    cd ML
 
 2. **Создайте и активируйте виртуальное окружение**
+   ```bash
    python -m venv .venv
    .\.venv\Scripts\Activate.ps1 
 
 3. **Установите зависимости**
+   ```bsh
    pip install -r requirements.txt
   
 4. **Подготовьте датасет**
    Скачайте один из forensic-датасетов (например, Columbia Uncompressed).
    Распакуйте в папку datasets/external/columbia (должны быть подпапки 4cam_auth и 4cam_splc).
    Импортируйте датасет в единую структуру:
+   ```bash
    python scripts/02_import_dataset.py --kind columbia --source datasets/external/columbia --overwrite
 
 5. **Извлеките признаки**
+   ```bash
    python scripts/03_extract_features.py --sources public
 
 6. **Обучите модель Random Forest**
    Быстрый запуск (без подбора гиперпараметров):
+   ```bash
    python scripts/04_train_random_forest.py --scopes public --no-tune
    С подбором гиперпараметров (GridSearchCV):
+   ```bash
    python scripts/04_train_random_forest.py --scopes public
 
 7. Проверьте одно изображение
+   ```bash
    python scripts/08_predict_image.py --image путь/к/изображению.jpg
 
 
