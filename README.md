@@ -69,7 +69,7 @@ python scripts/02_import_dataset.py --kind columbia --source datasets/external/c
 python scripts/02_import_dataset.py --kind casia --source datasets/external/casia --overwrite
 python scripts/02_import_dataset.py --kind comofod --source datasets/external/comofod --overwrite
 python scripts/02_import_dataset.py --kind coverage --source datasets/external/coverage --overwrite
-
+```
 
 ### 2. Извлечь признаки
 
