@@ -1,12 +1,61 @@
+# Информация про студента
+Король Денис Андреевич  
+Korol_DA_23  
+3 курс 6 семестр  
+Специальность: Кибербезопасность  
+Курсовой проект  
+
 # Forensic-анализ редактирования изображений
 
 Курсовой проект по машинному обучению в направлении **"Обнаружение фейков и цифровых манипуляций в медиафайлах"**.
 
 Выбранная подтема: **анализ метаданных и шумовых паттернов изображений для определения следов редактирования в графических редакторах**.
 
-Задача проекта - обучить модель бинарной классификации `original` / `edited` на forensic-признаках изображения: metadata, EXIF, Error Level Analysis, шумовой остаток и JPEG-артефакты. Основной метод - **Random Forests / Случайные леса**.
+Задача проекта — обучить модель бинарной классификации `original` / `edited` на forensic-признаках изображения: metadata, EXIF, Error Level Analysis, шумовой остаток и JPEG-артефакты. Основной метод — **Random Forests / Случайные леса**.
 
 Проект не решает задачи GAN/diffusion detection, DeepFake-видео или NLP fake-news: здесь используется классическое признаковое описание изображения и табличная ML-модель.
+
+## 🛠 Требования
+
+- Python 3.9+
+- pip
+
+## 🚀 Как запустить
+
+1. **Клонируйте репозиторий**  
+   ```bash
+   git clone https://github.com/KorolDz/ML
+   cd ML
+
+2. **Создайте и активируйте виртуальное окружение**
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1 
+
+3. **Установите зависимости**
+   pip install -r requirements.txt
+  
+4. **Подготовьте датасет**
+   Скачайте один из forensic-датасетов (например, Columbia Uncompressed).
+   Распакуйте в папку datasets/external/columbia (должны быть подпапки 4cam_auth и 4cam_splc).
+   Импортируйте датасет в единую структуру:
+   python scripts/02_import_dataset.py --kind columbia --source datasets/external/columbia --overwrite
+
+5. **Извлеките признаки**
+   python scripts/03_extract_features.py --sources public
+
+6. **Обучите модель Random Forest**
+   Быстрый запуск (без подбора гиперпараметров):
+   python scripts/04_train_random_forest.py --scopes public --no-tune
+   С подбором гиперпараметров (GridSearchCV):
+   python scripts/04_train_random_forest.py --scopes public
+
+7. Проверьте одно изображение
+   python scripts/08_predict_image.py --image путь/к/изображению.jpg
+
+
+
+
+
 
 ## Структура
 
